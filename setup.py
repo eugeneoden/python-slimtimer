@@ -12,7 +12,7 @@ setup(
     description='SlimTimer interface for Python',
     keywords='slimtimer slim timer',
     license = 'BSD',
-    url = 'http://pypi.python.org/pypi/python-slimtimer',
+    url = 'http://github.com/eugeneoden/python-slimtimer',
     author='Eugene Oden',
     author_email='eugeneoden@gmail.com',
     long_description="""
