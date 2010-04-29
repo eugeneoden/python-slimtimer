@@ -154,6 +154,36 @@ class SlimTimerSession:
 
         return self._parse_task(ET.fromstring(data))
 
+    def update_time_entry(self, entry):
+        """
+        Updates the given entry or creates it if the entry ID is 0
+        """
+        create = entry.id == 0
+
+        xml = self._serialise_time_entry(entry)
+
+        method = ['PUT','POST'][create]
+
+        if create:
+            url = "%s/time_entries?%s" % \
+                  (self._get_base_url(), self._get_url_params())
+        else:
+            url = "%s/time_entries/%s?%s" % \
+                  (self._get_base_url(), entry.id, self._get_url_params())
+
+        headers = { "Accept":"application/xml",
+                    "Content-Type":"application/xml" }
+        self.__conn.request(method, url, xml, headers) 
+        response = self.__conn.getresponse()
+
+        data = response.read()
+
+        if not response.status == 200:
+            raise Exception("Could not update/create time entry."\
+                    " Response was [%s]: %s" % (response.status, data))
+
+        return self._parse_time_entry(ET.fromstring(data))
+
     def delete_task(self, task):
 
         url = "%s/tasks/%s?%s" % \
@@ -165,6 +195,21 @@ class SlimTimerSession:
 
         if not response.status == 200:
             raise Exception("Task not found for deletion")
+
+        # We seem to need to reset the connection after a delete
+        self._reset_connection()
+
+    def delete_entry(self, entry):
+
+        url = "%s/time_entries/%s?%s" % \
+              (self._get_base_url(), entry.id, self._get_url_params())
+
+        self.__conn.request("DELETE", url, "",
+                            { "Accept": "application/xml" })
+        response = self.__conn.getresponse()
+
+        if not response.status == 200:
+            raise Exception("Entry not found for deletion")
 
         # We seem to need to reset the connection after a delete
         self._reset_connection()
@@ -369,3 +414,44 @@ class SlimTimerSession:
 
         return result
 
+    def _serialise_time_entry(self, entry):
+
+        xml_entry = ET.Element("time-entry")
+
+        if entry.id != 0:
+            id = ET.SubElement(xml_entry, "id")
+            id.set("type", "integer")
+            id.text = str(entry.id)
+
+        start_time = ET.SubElement(xml_entry, "start-time")
+        start_time.set("type", "datetime")
+        start_time.text = entry.start_time.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+        duration = (entry.end_time - entry.start_time).seconds
+        if not duration:
+            duration = 59
+
+        xml_duration = ET.SubElement(xml_entry, "duration-in-seconds")
+        xml_duration.set("type", "integer")
+        xml_duration.text = str(duration)
+
+        task_id = ET.SubElement(xml_entry, "task-id")
+        task_id.set("type", "integer")
+        task_id.text = str(entry.task.id)
+
+        if len(entry.tags):
+            tags = ET.SubElement(xml_entry, "tags")
+
+            if isinstance(entry.tags, list):
+                tags.text = string.join(entry.tags, ",")
+            else:
+                tags.text = str(entry.tags)
+
+        xml = StringIO.StringIO()
+        ET.ElementTree(xml_entry).write(xml)
+        result = xml.getvalue()
+        xml.close()
+
+        return result
+
+# vim:set ts=4 sw=4 ai et:
