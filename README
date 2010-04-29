@@ -1,0 +1,14 @@
+python-slimtimer
+================
+
+provides an interface for the SlimTimer time tracking website:
+
+	http://slimtimer.com
+
+based on the slimtimer api module originally found in the TracSlimTimer plugin:
+
+	http://www.trac-hacks.org/wiki/TracSlimTimerPlugin
+
+original author: Brian Birtles <birtles@gmail.com>
+
+current maintainer: Eugene Oden <eugeneoden@gmail.com>
